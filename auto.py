@@ -260,7 +260,8 @@ while 1:
     sleep(SLEEPTIME)
     
     #ログインの実行
-    elem_user_id.send_keys(Keys.ENTER)
+    #elem_user_id.send_keys(Keys.ENTER)
+    elem_login.click()
 
     if not wait_url_changed(driver, URL):
         log_print("login要求後にURLが変わりませんでした")
