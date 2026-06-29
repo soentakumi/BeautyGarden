@@ -11,7 +11,7 @@ BROWSER_DISPLAY_ENABLE=True
 RANDAM_WAIT_ENABLE=True
 TEST_MODE_ENABLE=False
 START_TIME=8               # 開始時間(時)
-END_TIME=21                # 終了時間(時)
+END_TIME=25                # 終了時間(時)
 SLEEPTIME=5
 SCROLLTIME=3
 PAUSETIME=30
@@ -149,6 +149,7 @@ def close_popup_by_text(driver, popup_text):
                     if elem.is_displayed() and elem.is_enabled():
                         elem.click()
                         log_print("popup の閉じるボタンをクリック: " + popup_text)
+                        log_print("wait 1 [sec]")
                         sleep(1)
                         return True
             except Exception:
@@ -170,6 +171,7 @@ def wait_url_changed(driver, before_url):
             log_print("url changed: " + before_url + " -> " + current_url)
             return True
 
+        log_print("wait 1 [sec]")
         sleep(1)
 
     log_print("url not changed timeout: " + before_url)
@@ -232,6 +234,7 @@ while 1:
     if (nowchour >= END_TIME):
         break
     if (nowchour < START_TIME):
+        log_print("wait "+str(PAUSETIME)+" [sec]")
         sleep(PAUSETIME) 
         continue
     
@@ -244,11 +247,14 @@ while 1:
     
     #ログイン
     URL="https://salonboard.com/login/"
+    log_print(URL)
     driver.get(URL)                #対象のサイトを開く
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(SLEEPTIME)
 
     # ログイン前のヘルプポップアップを閉じる
     close_popup_by_text(driver, "ログインでお困り")
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(SLEEPTIME)
     
     #ログインのIDとPWの設定
@@ -257,16 +263,20 @@ while 1:
     elem_user_pw = driver.find_element(By.NAME, "password")
     elem_user_pw.send_keys(PW)
     elem_login = driver.find_element(By.CSS_SELECTOR, "a.loginBtnSize")
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(SLEEPTIME)
     
     #ログインの実行
-    #elem_user_id.send_keys(Keys.ENTER)
-    elem_login.click()
+    log_print("login: ログイン実行中 id="+ID)
+    elem_user_id.send_keys(Keys.ENTER)
+    #elem_login.click()
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
+    sleep(SLEEPTIME)
 
-    if not wait_url_changed(driver, URL):
-        log_print("login要求後にURLが変わりませんでした")
-        driver.quit()
-        sys.exit(1)
+    #if not wait_url_changed(driver, URL):
+    #    log_print("login要求後にURLが変わりませんでした")
+    #    driver.quit()
+    #    sys.exit(1)
     
     #画像ログイン対応
     try:
@@ -276,11 +286,15 @@ while 1:
         log_print(f"login ID={ID} request")
         for i in range(5):
             winsound.MessageBeep()
-            sleep(1)  # 1秒間隔
+            log_print("wait 1 [sec]")
+            sleep(1)  # 1秒間隔s
+        
+        log_print("wait 30 [sec]")
         sleep(30)
         elem_login_btn.click()
         try:
             #トップ画面 or 画像認証エラー画面
+            log_print("wait "+str(SLEEPTIME)+" [sec]")
             sleep(SLEEPTIME)
             ret_btn = driver.find_element(By.XPATH, "//input[@type='button' and @value='戻る']")
             #画像認証エラー
@@ -300,30 +314,38 @@ while 1:
             sys.exit(1)
         except Exception as e:
             #トップ画面
-            log_print("login")  #画像確認あり(人手による対応)でlogin成功
+            log_print("login: 画像確認あり(人手による対応)でlogin成功")  #画像確認あり(人手による対応)でlogin成功
     except Exception as e:
         #トップ画面
-        log_print("login")  #画像確認なしでlogin成功
+        log_print("login: 画像確認なしでlogin成功")  #画像確認なしでlogin成功
 
     #掲載管理
     url = "https://salonboard.com/CNK/reflect/reflectTop/" 
     log_print(url)
     driver.get(url)                #対象のサイトを開く
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(SLEEPTIME)
+    log_print("掲載管理が表示されました")
 
     #メニュー
     url = "https://salonboard.com/CNK/draft/menuEdit/" 
     log_print(url)
     driver.get(url)                #対象のサイトを開く
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(SLEEPTIME)
+    log_print("メニューが表示されました")
     
     elem = driver.find_element(By.ID, "moveBtn chk btn_reg")
     log_print(url)
     elem.click()
     log_print('click')
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(SLEEPTIME)
+    log_print("moveBtn chk btn_regがclickされました")
+    
     
     #放置する
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(PAUSETIME)
     
     elem_form = driver.find_element(By.ID, "formReflectedButton")
@@ -331,21 +353,30 @@ while 1:
     elem.click()
     log_print('click')
     sleep(SLEEPTIME)
+    log_print("formReflectedButtonがclickされました")
+    
     
     #放置する
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(PAUSETIME)
     
     #掲載管理
     url = "https://salonboard.com/CNK/reflect/reflectTop/" 
     log_print(url)
     driver.get(url)                #対象のサイトを開く
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(SLEEPTIME)
+    log_print("掲載管理が表示されました")
     
     #放置する
+    log_print("wait "+str(SLEEPTIME)+" [sec]")
     sleep(PAUSETIME)
         
     #Webドライバを終了する
     driver.quit()
+    log_print(" #Webドライバが終了しました")
     
+    
+    log_print(sleep({WAIT_LONG_MINS}))
     sleep(WAIT_LONG_MINS) 
 exit(0)
