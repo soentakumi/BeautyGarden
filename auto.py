@@ -1,3 +1,6 @@
+#水野さんのサイト
+ID="CD49226"
+PW="kika@8888"
 #チノちゃんのサイト
 #ID="CB79350"
 #PW="garden1!"
@@ -31,6 +34,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoAlertPresentException
 from time import sleep
 import requests
 from bs4 import BeautifulSoup
@@ -90,6 +94,86 @@ def randam_wait(type):
     except:
         pass
     
+# 指定文字列を含むポップアップが出ていたら閉じる
+def close_popup_by_text(driver, popup_text):
+    old_wait = TIMEOUT
+
+    try:
+        # 任意ポップアップ確認で長時間止まらないように一時的に implicit wait を切る
+        driver.implicitly_wait(0)
+
+        # ブラウザ標準アラートの場合
+        try:
+            alert = driver.switch_to.alert
+            text = alert.text
+            if popup_text in text:
+                log_print("popup alert 検出: " + text)
+                alert.dismiss()
+                log_print("popup alert を閉じました")
+                return True
+        except NoAlertPresentException:
+            pass
+        except Exception:
+            pass
+
+        # HTMLポップアップの場合
+        try:
+            body_text = driver.find_element(By.TAG_NAME, "body").text
+        except Exception:
+            body_text = ""
+
+        if popup_text not in body_text:
+            log_print("popup なし: " + popup_text)
+            return False
+
+        log_print("popup 検出: " + popup_text)
+
+        # 「はい」などの本文ボタンは押さない。閉じるボタンだけを探す。
+        close_candidates = [
+            "//button[contains(@class, 'close')]",
+            "//a[contains(@class, 'close')]",
+            "//button[@aria-label='Close']",
+            "//button[@aria-label='閉じる']",
+            "//a[@aria-label='Close']",
+            "//a[@aria-label='閉じる']",
+            "//*[normalize-space()='×']",
+            "//*[normalize-space()='✕']",
+            "//*[normalize-space()='✖']",
+            "//*[normalize-space()='閉じる']",
+        ]
+
+        for xpath in close_candidates:
+            try:
+                elems = driver.find_elements(By.XPATH, xpath)
+                for elem in elems:
+                    if elem.is_displayed() and elem.is_enabled():
+                        elem.click()
+                        log_print("popup の閉じるボタンをクリック: " + popup_text)
+                        sleep(1)
+                        return True
+            except Exception:
+                pass
+
+        log_print("popup は検出したが、閉じるボタンをクリックできませんでした: " + popup_text)
+        return False
+
+    finally:
+        driver.implicitly_wait(old_wait)
+
+# 指定URLから別URLへ変わるまで待つ
+def wait_url_changed(driver, before_url):
+    for i in range(TIMEOUT):
+        current_url = driver.current_url
+        log_print("url wait current_url=" + current_url)
+
+        if current_url != before_url:
+            log_print("url changed: " + before_url + " -> " + current_url)
+            return True
+
+        sleep(1)
+
+    log_print("url not changed timeout: " + before_url)
+    return False
 
 #メイン
 log_print("【BeautyGarden自動アクセスプログラム】"+VERSION)
@@ -162,16 +246,26 @@ while 1:
     URL="https://salonboard.com/login/"
     driver.get(URL)                #対象のサイトを開く
     sleep(SLEEPTIME)
+
+    # ログイン前のヘルプポップアップを閉じる
+    close_popup_by_text(driver, "ログインでお困り")
+    sleep(SLEEPTIME)
     
+    #ログインのIDとPWの設定
     elem_user_id = driver.find_element(By.NAME, "userId")
     elem_user_id.send_keys(ID)
     elem_user_pw = driver.find_element(By.NAME, "password")
     elem_user_pw.send_keys(PW)
-    elem_login = driver.find_element(By.TAG_NAME, "a")
+    elem_login = driver.find_element(By.CSS_SELECTOR, "a.loginBtnSize")
     sleep(SLEEPTIME)
     
     #ログインの実行
     elem_user_id.send_keys(Keys.ENTER)
+
+    if not wait_url_changed(driver, URL):
+        log_print("login要求後にURLが変わりませんでした")
+        driver.quit()
+        sys.exit(1)
     
     #画像ログイン対応
     try:
@@ -218,11 +312,12 @@ while 1:
 
     #メニュー
     url = "https://salonboard.com/CNK/draft/menuEdit/" 
-    driver.get(url)                #対象のサイトを開く
     log_print(url)
+    driver.get(url)                #対象のサイトを開く
     sleep(SLEEPTIME)
     
     elem = driver.find_element(By.ID, "moveBtn chk btn_reg")
+    log_print(url)
     elem.click()
     log_print('click')
     sleep(SLEEPTIME)
